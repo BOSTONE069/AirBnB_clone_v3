@@ -1,60 +1,53 @@
 #!/usr/bin/python3
 """
-    Flask route that returns json response
+view for User objects that handles all default RestFul API actions
 """
+from flask import jsonify, abort, request
+from models import storage
 from api.v1.views import app_views
-from flask import abort, jsonify, request
-from models import storage, CNC
-from flasgger.utils import swag_from
+from models.user import User
 
 
-@app_views.route('/users/', methods=['GET', 'POST'])
-@swag_from('swagger_yaml/users_no_id.yml', methods=['GET', 'POST'])
-def users_no_id(user_id=None):
-    """
-        users route that handles http requests with no ID given
-    """
-
+@app_views.route('/users', methods=['GET', 'POST'], strict_slashes=False)
+def handle_users():
+    """Retrieves the list of all User objects or create a new User object"""
     if request.method == 'GET':
-        all_users = storage.all('User')
-        all_users = [obj.to_json() for obj in all_users.values()]
-        return jsonify(all_users)
-
+        return jsonify([obj.to_dict() for obj in storage.all("User").
+                        values()]), 200
     if request.method == 'POST':
-        req_json = request.get_json()
-        if req_json is None:
-            abort(400, 'Not a JSON')
-        if req_json.get('email') is None:
-            abort(400, 'Missing email')
-        if req_json.get('password') is None:
-            abort(400, 'Missing password')
-        User = CNC.get('User')
-        new_object = User(**req_json)
-        new_object.save()
-        return jsonify(new_object.to_json()), 201
+            if not request.get_json(silent=True):
+                abort(400, "Not a JSON")
+            if not request.get_json(silent=True).get('email'):
+                abort(400, "Missing email")
+            if not request.get_json(silent=True).get('password'):
+                abort(400, "Missing password")
+            kwargs = request.get_json(silent=True)
+            new_user = User(**kwargs)
+            new_user.save()
+            return jsonify(new_user.to_dict()), 201
 
 
-@app_views.route('/users/<user_id>', methods=['GET', 'DELETE', 'PUT'])
-@swag_from('swagger_yaml/users_id.yml', methods=['GET', 'DELETE', 'PUT'])
-def user_with_id(user_id=None):
-    """
-        users route that handles http requests with ID given
-    """
-    user_obj = storage.get('User', user_id)
-    if user_obj is None:
-        abort(404, 'Not found')
-
-    if request.method == 'GET':
-        return jsonify(user_obj.to_json())
-
-    if request.method == 'DELETE':
-        user_obj.delete()
-        del user_obj
-        return jsonify({}), 200
-
-    if request.method == 'PUT':
-        req_json = request.get_json()
-        if req_json is None:
-            abort(400, 'Not a JSON')
-        user_obj.bm_update(req_json)
-        return jsonify(user_obj.to_json()), 200
+@app_views.route('/users/<user_id>', methods=['GET', 'DELETE', 'PUT'],
+                 strict_slashes=False)
+def user_byid(user_id):
+    """Retrieves a User object by id, delete or update a User object"""
+    user_obj = storage.get("User", user_id)
+    if user_obj:
+        if request.method == 'GET':
+            return jsonify(user_obj.to_dict()), 200
+        elif request.method == 'DELETE':
+            storage.delete(user_obj)
+            storage.save()
+            return {}, 200
+        elif request.method == 'PUT':
+            if not request.get_json(silent=True):
+                abort(400, "Not a JSON")
+            kwargs = request.get_json(silent=True)
+            if kwargs:
+                for key, value in kwargs.items():
+                    if key not in ["id", "created_at", "updated_at"]:
+                        setattr(user_obj, key, value)
+                user_obj.save()
+            return jsonify(user_obj.to_dict()), 200
+    else:
+        abort(404)

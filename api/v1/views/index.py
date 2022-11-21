@@ -1,37 +1,23 @@
 #!/usr/bin/python3
 """
-Flask route that returns json status response
+starts a Flask web application
 """
-from api.v1.views import app_views
-from flask import jsonify, request
+from flask import jsonify
 from models import storage
+from api.v1.views import app_views
 
 
-@app_views.route('/status', methods=['GET'])
+@app_views.route('/status', strict_slashes=False)
 def status():
-    """
-    function for status route that returns the status
-    """
-    if request.method == 'GET':
-        resp = {"status": "OK"}
-        return jsonify(resp)
+    """display the status response"""
+    return jsonify(status="OK")
 
 
-@app_views.route('/stats', methods=['GET'])
+@app_views.route('/stats', strict_slashes=False)
+# This code has the advantage of not returning non-existing objects
 def stats():
-    """
-    function to return the count of all class objects
-    """
-    if request.method == 'GET':
-        response = {}
-        PLURALS = {
-            "Amenity": "amenities",
-            "City": "cities",
-            "Place": "places",
-            "Review": "reviews",
-            "State": "states",
-            "User": "users"
-        }
-        for key, value in PLURALS.items():
-            response[value] = storage.count(key)
-        return jsonify(response)
+    """display the number of each objects by type"""
+    all_classes = {"Amenity": "amenities", "City": "cities", "Place": "places",
+                   "Review": "reviews", "State": "states", "User": "users"}
+    return jsonify({v: storage.count(k) for k, v in all_classes.items()
+                    if storage.count(k)})

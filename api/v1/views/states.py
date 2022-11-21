@@ -1,57 +1,52 @@
 #!/usr/bin/python3
 """
-Flask route that returns json status response
+view for State objects that handles all default RestFul API actions
 """
+from flask import jsonify, abort, request
+from models import storage
 from api.v1.views import app_views
-from flask import abort, jsonify, make_response, request
-from flasgger import Swagger, swag_from
-from models import storage, CNC
+from models.state import State
 
 
-@app_views.route('/states', methods=['GET', 'POST'])
-@swag_from('swagger_yaml/states_no_id.yml', methods=['GET', 'POST'])
-def states_no_id():
-    """
-        states route to handle http method for requested states no id provided
-    """
+@app_views.route('/states', methods=['GET', 'POST'], strict_slashes=False)
+def handle_states():
+    """Retrieves the list of all State objects or create a new State object"""
     if request.method == 'GET':
-        all_states = storage.all('State')
-        all_states = list(obj.to_json() for obj in all_states.values())
-        return jsonify(all_states)
-
+        return jsonify([obj.to_dict() for obj in storage.all("State").
+                        values()]), 200
     if request.method == 'POST':
-        req_json = request.get_json()
-        if req_json is None:
-            abort(400, 'Not a JSON')
-        if req_json.get("name") is None:
-            abort(400, 'Missing name')
-        State = CNC.get("State")
-        new_object = State(**req_json)
-        new_object.save()
-        return jsonify(new_object.to_json()), 201
+            if not request.get_json(silent=True):
+                abort(400, "Not a JSON")
+            if not request.get_json(silent=True).get('name'):
+                abort(400, "Missing name")
+            kwargs = request.get_json(silent=True)
+            new_state = State(**kwargs)
+            new_state.save()
+            return jsonify(new_state.to_dict()), 201
 
 
-@app_views.route('/states/<state_id>', methods=['GET', 'DELETE', 'PUT'])
-@swag_from('swagger_yaml/states_id.yml', methods=['PUT', 'GET', 'DELETE'])
-def states_with_id(state_id=None):
-    """
-        states route to handle http method for requested state by id
-    """
-    state_obj = storage.get('State', state_id)
-    if state_obj is None:
-        abort(404, 'Not found')
-
-    if request.method == 'GET':
-        return jsonify(state_obj.to_json())
-
-    if request.method == 'DELETE':
-        state_obj.delete()
-        del state_obj
-        return jsonify({})
-
-    if request.method == 'PUT':
-        req_json = request.get_json()
-        if req_json is None:
-            abort(400, 'Not a JSON')
-        state_obj.bm_update(req_json)
-        return jsonify(state_obj.to_json())
+@app_views.route('/states/<state_id>', methods=['GET', 'DELETE', 'PUT'],
+                 strict_slashes=False)
+def state_byid(state_id):
+    """Retrieves a State object by id, delete or update a State object"""
+    state_obj = storage.get("State", state_id)
+    if state_obj:
+        if request.method == 'GET':
+            return jsonify(state_obj.to_dict()), 200
+        elif request.method == 'DELETE':
+            storage.delete(state_obj)
+            storage.save()
+            return {}, 200
+        elif request.method == 'PUT':
+            if not request.get_json(silent=True):
+                abort(400, "Not a JSON")
+            kwargs = request.get_json(silent=True)
+            if kwargs:
+                for key, value in kwargs.items():
+                    if key not in ["id", "created_at", "updated_at"]:
+                        setattr(state_obj, key, value)
+                state_obj.save()
+            return jsonify(state_obj.to_dict()), 200
+    else:
+        # When the state_id is not linked to any State object
+        abort(404)
