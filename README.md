@@ -1,7 +1,7 @@
 # AirBnB Clone - Version 3
 
 <p align="center">
-    <img src="https://s3.amazonaws.com/alx-intranet.hbtn.io/uploads/medias/2020/9/02078cd7f0573885c85a225c7436584a5afea1f9.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIARDDGGGOUSBVO6H7D%2F20221121%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20221121T105509Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=d51e842cf758c025dad995bd0b175e76794ded9e816df3035dc274bec0c07867"/>
+    <img src="AirBnB_clone_v3.png"/>
 </p>
 
 ## Description
