@@ -171,8 +171,8 @@ EOF  all  create  destroy  help  quit  show  update
 No known bugs at this time. 
 
 ## Authors
-ABENEZER BAHERU - [Github](https://github.com/Abenezer-Baheru) / [Twitter]()  
-OCHIENG' BOSTONE - [Github](https://github.com/BOSTONE069) [Twitter]()
+ABENEZER BAHERU - [Github](https://github.com/Abenezer-Baheru)
+OCHIENG' BOSTONE - [Github](https://github.com/BOSTONE069)
 
 ## License
 Public Domain. No copy write protection. 
