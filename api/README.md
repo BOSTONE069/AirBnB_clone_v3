@@ -1,4 +1,4 @@
-# API with Swagger
+# API 
 
 ## Description
 
